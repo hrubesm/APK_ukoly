@@ -107,6 +107,7 @@ class Draw(QWidget):
             qp.drawPolygon(pol)
         for pol in self.__results:
             qp.setPen(Qt.GlobalColor.red)
+            qp.setBrush(Qt.BrushStyle.NoBrush)
             qp.drawPolygon(pol)
 
         #End draw
