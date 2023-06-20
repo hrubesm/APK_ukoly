@@ -2,6 +2,7 @@ from PyQt6 import QtCore, QtGui, QtWidgets
 from draw import Draw
 from algorithms import Algorithms
 
+
 class Ui_MainForm(object):
 
     def setupUi(self, MainForm):

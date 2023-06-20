@@ -146,6 +146,7 @@ class Algorithms:
     # Comnpute area
     def computeArea(self, pol : QPolygonF):
         n = len(pol)
+        print(n,"delka")
         area = 0
 
         # Process all vertices
