@@ -142,12 +142,20 @@ class Ui_MainForm(object):
                     # If point is inside polygon
                     self.Canvas.getResPol(polygons)
                     info = 1
+                elif res == -1:
+                    # If point is on edge
+                    self.Canvas.getResPol(polygons)
+                    info = -1
             else:
                 res = a.getWindingNumber(q,polygons)
                 if res == 1:
                     # If point is inside polygon
                     self.Canvas.getResPol(polygons)
                     info = 1
+                elif res == -1:
+                    # if pont is on edge
+                    self.Canvas.getResPol(polygons)
+                    info = -1
         self.Canvas.repaint()
 
         # Print results
@@ -155,6 +163,8 @@ class Ui_MainForm(object):
         dialog.setWindowTitle("Results of analysis")
         if info == 1:
             dialog.setText("Inside")
+        elif info == -1:
+            dialog.setText("On Edge")
         else:
             dialog.setText("Outside")
         dialog.exec()

@@ -8,8 +8,8 @@ class Algorithms:
         pass
 
     # Function for getting a postion and an angle
-    def getPositionAndAngle(self, q, i0, i1):
-        eps = 1**(-19)
+    def getPosition(self, q, i0, i1):
+        eps = 1 ** (-19)
         # Vectors
         x_qi = i0.x() - q.x()
         y_qi = i0.y() - q.y()
@@ -17,15 +17,25 @@ class Algorithms:
         y_qi1 = i1.y() - q.y()
 
         # Determinant
-        det = x_qi*y_qi1 - x_qi1*y_qi
+        det = x_qi * y_qi1 - x_qi1 * y_qi
 
         # Position (right half-plane, left half-plane, colinear point)
         if det > eps:
             pos = 1
         elif det < -eps:
             pos = 0
+        elif det == 0:
+            pos = 2
         else:
             pos = -1
+        return pos
+    def getAngle(self, q, i0, i1):
+        eps = 1**(-19)
+        # Vectors
+        x_qi = i0.x() - q.x()
+        y_qi = i0.y() - q.y()
+        x_qi1 = i1.x() - q.x()
+        y_qi1 = i1.y() - q.y()
 
         # Numerator
         nu = x_qi*x_qi1 + y_qi*y_qi1
@@ -47,7 +57,7 @@ class Algorithms:
         omega = abs(acos(cos_a))
 
         # Position and angle
-        return pos, omega
+        return omega
 
     # Function for a Winding Number method
     def getWindingNumber (self, q, pol):
@@ -58,26 +68,25 @@ class Algorithms:
 
         # Proces all vertices
         for i in range(n):
-            pos, omega = self.getPositionAndAngle(q, pol[i], pol[(i + 1) % n])
+            pos = self.getPosition(q, pol[i], pol[(i + 1) % n])
+            omega = self.getAngle(q, pol[i], pol[(i + 1) % n])
 
             # Point is in the left halfplane
             if pos == 1:
                 omega_sum += omega
 
-            # Point is a kolinear
-            elif pos == -1:
-                q_x = q.x()
-                q_y = q.y()
-                i_x = pol[i].x()
-                i_y = pol[i].y()
-                i1_x = pol[(i + 1) % n].x()
-                i1_y = pol[(i + 1) % n].y()
-                if (q_x - i_x) * (q_x - i1_x) <= 0 and (q_y - i_y) * (q_y - i1_y) <= 0:
-                    return 1
-
             # Point is in the right halfplane
             else:
                 omega_sum -= omega
+
+            # Point is vertex
+            if (q == pol[i]) or (q == pol[(i + 1) % n]):
+                return -1
+
+            # Point is a kolinear
+            elif pos == 2 and abs(omega - pi) < eps:
+                print("tut")
+                return -1
 
         # Point is inside a polygon
         if abs(abs(omega_sum)-2*pi) < eps:
@@ -104,7 +113,7 @@ class Algorithms:
 
             # Point is vertex
             if xi == 0 and yi == 0:
-                return 1
+                return -1
 
             # Computing of intersection
             if (yi1 - yi) == 0:
@@ -124,7 +133,8 @@ class Algorithms:
 
         # Point is on boundary of polygon
         if (kr % 2) != (kl % 2):
-            return 1
+            print("tut")
+            return -1
 
         # Point is inside polygon
         if (kr % 2) == 1:

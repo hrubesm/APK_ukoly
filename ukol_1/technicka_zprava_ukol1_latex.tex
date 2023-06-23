@@ -1,0 +1,261 @@
+\documentclass[a4paper,12pt]{article}
+\usepackage{graphicx}
+\usepackage{geometry}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage[parfill]{parskip}
+\usepackage[czech]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage{fancyhdr}
+\usepackage{enumitem}
+\usepackage{gensymb}
+\usepackage{amsmath, amssymb, amsfonts}
+\usepackage{graphicx, caption}
+\graphicspath{ {./images/} }
+\geometry{
+total={170mm,257mm},
+ left=20mm,
+ top=20mm
+ }
+ 
+\title{Technická zpráva úkol č. 1: Point Position Problem} 
+\author{Miroslav Hrubeš, Lucie Peterková} 
+\date{Praha 2023} 
+
+
+\frenchspacing
+\begin{document}
+    \maketitle
+    \newpage
+    % Zadání
+    \section{Zadání}
+    \textbf{Úloha č. 1: Geometrické vyhledávaní bodu}\\
+    \textit{Vstup: Souvislá polygonová mapa n polygonů \{$P_1, ..., P_n$\}, analyzovaný bod q.}\\
+    \textit{Výstup: $P_i, q \in P_i$.}
+
+    Nad polygonovou mapou implementujete Ray Crossing Algorithm pro geometrické vyhledání incidujícího polygonu obsahujícího zadaný bod \emph{q}.\\
+
+    Nalezený polygon graficky zvýrazněte vhodnýmm způsobem (např. vyplněním, šrafováním, blikáním). Grafické rozhraní vytvořte s využitím frameworku QT.\\
+
+    Pro generování nekonvexních polygonů můžete navrhnout vlastní algoritmus či použít existující geografická data (např. mapa evropských států).\\
+
+    Polygony budou načítány z textovéhosouboru ve Vámi zvoleném formátu. Pro datovou reprezentaci jednotlivýchch polygonů použijteijte špagetový model.
+
+    % Bonusové úlohy
+    
+    \section{Bonusové úlohy}
+    Byly řešeny tyto bonusové úlohy:\\
+    \begin{itemize}
+    \item \emph{Analýza polohy bodu (uvnitř/vně) metodou Winding Number Algorithm. (+10b)}
+    
+    \item \emph{Ošetření singulárního případu u Winding Number Algorithm: bod leží na hraně polygonu. (+5b)}
+    
+    \item \emph{Ošetření singulárního případu u Ray Crossing Algorithm: bod leží na hraně polygonu. (+5b)}
+    
+    \item \emph{Ošetření singulárního případu u obou algoritmů: bod je totožný s vrcholem jednoho či více polygonů. (+2b)}
+    
+    \item \emph{Zvýraznění všech polygonů pro oba výše uvedené singulární případy.  (+3b)}
+     
+    \end{itemize}
+    
+
+    % Popis a rozbor problému
+    \newpage
+    \section{Point Location Problem}
+    Jedná se o problém hledání polohy bodu uvnitř nebo mimo množinu bodů (polygonu) v rovině. Pro využití v geografických informačních systémech se dá tento problém interpretovat jako zjištování polohy vůči dalším objektům v prostoru. Z obecného hlediska se jedná o klasický problém v počítačové a výpočetní geometrii.\\
+
+    Huang (1997) popisuje problém následovně: "Máte daný polygon \emph{P} a libovolný bod \emph{q}. Určete, zda je bod ohraničený okraji mnohouhelníku \emph{P}." (obr. 1). I přes zdání jednoduchého zadání problému existuje nemalé množství algoritmů s větší či menší přesností správného výsledku dle konkrétního zadání. 
+
+    \begin{figure}[h]
+    \includegraphics[width=6.56cm, height=7.5cm]{obr.1.JPG}
+    \centering
+    \caption{Point Location Problem, zdroj: Huang (1997).}
+    \label{fig:obr1}
+    \end{figure}
+
+    Jak již bylo zmíněno, řešení problému je možně pomocí různých algoritmů. Výběr vhodného algoritmu závisí na více faktorech. Jedním z hlavních je typ polygonu, tedy zda se jedné o polygon konvexní nebo konkávní. Polygon je konvexní, když žádný z vnitřních úhlů není větší než 180°. Konkávní polygon alespoň jeden takový musí obsahovat. Dalším faktorem může být možnost ošetření singularit, případně rychlost algoritmů.\\
+
+    % Ray Crossing Algorithm
+    \subsection{ Ray Crossing Algorithm}
+    Metoda se dá přeložit jako Algoritmus průsečíků paprsku. Princip této metody spočívá v tom, že se vede paprsek \emph{r} procházející zkoumaným bodem \emph{q}. Následně se zkontroluje, zda se paprsek protíná s hranou polygonu \emph{P}. Pokud ano, pak se zaznamená počet průsečíků paprsku s hranami polygonu.\\
+    \begin{equation*}
+    r(q) : y = yq 
+    \end{equation*}\\
+    
+    Na základě počtu průsečíků (\emph{k}) lze určit, zda se bod nachází uvnitř nebo vně polygonu. Pokud je počet průsečíků lichý, pak se bod nachází uvnitř polygonu. Pokud je počet průsečíků sudý, pak se bod nachází mimo polygon.\\
+
+    \begin{equation*}
+    k\%2=
+    \begin{cases}
+    1, \quad q \in P\\
+    0, \quad q \notin P
+    \end{cases}
+    \end{equation*}\\
+
+    Mezi výhody algoritmu Roy crossing patří jeho efektivita při řešení problému point location pro velké datasety polygonů. Algoritmus je schopen vyřešit tento problém v lineárním čase vzhledem k počtu přímek, což je velmi rychlé. 
+
+    Nicméně, algoritmus Roy crossing má také několik nevýhod, které by měly být zohledněny při jeho použití. Algoritmus je náchylný k chybám při přítomnosti singulárních bodů, jako jsou například body, kde se přímky protínají. Algoritmus také vyžaduje určité úpravy pro práci s polygonem s otvory, což může být pro některé aplikace nevýhodou (Alciatore 1995).
+
+    Mezi speciální případy lze zařadit stav, kdy se bod nachází na hraně polygonu či přímo odpovídá vrcholu polygonu. V těchto případech algoritmus jako výstup vrací hodnotu -1.
+    \subsubsection{Pseudokód Roy Crossing}
+    \begin{algorithm}
+    \caption {\textit{Roy Crossing Algorithm}}
+    \begin{algorithmic}[1]
+        \State  Nastav počty průsečíků na 0.
+        \State Spočítej délku hran polygonu $P$.
+        \State Pro všechny vrcholy $P$:
+        \State \indent Sniž souřadnice bodu $q$ tak, aby byl v počátku souřadnic
+        \State \indent Spočítej souřadnice dalšího bodu.
+        \State \indent {\bf Pokud} aktuální bod odpovídá vrcholu, vrať hodnotu -1.
+        \State \indent Spočítej průsečík úsečky mezi aktuálním bodem a následujícím bodem s osou x.
+        \State \indent {\bf Pokud} průsečík leží vpravo od bodu $q$ a představuje přechod vpravo přes hranu $P$, $kr$ + 1
+        \State \indent {\bf Pokud} průsečík leží vlevo od bodu $q$ a představuje přechod vlevo přes hranu $P$, $kl$ + 1.
+        \State {\bf Pokud} bod $q$ leží na hraně $P$, vrať -1.
+        \State {\bf Pokud} bod $q$ leží uvnitř $P$, vrať 1.
+        \State {\bf Jinak} vrať 0.
+    \end{algorithmic}
+    \end{algorithm}
+
+    % Winding Number Algorithm
+    \subsection{Winding Number Algorithm}
+    Principem algoritmu je počítání tzv. \emph{winding number $\varOmega$} , což by se dalo přeložit jako "číslo ovíjení". Jedná se o to, kolikrát křivka (hrany polygonu \emph{P}  obepíná daný bod \emph{q}. Pokud se bod nachází uvnitř křivky, bude křivka obepínat bod v určitém směru, $\varOmega$ bude nenulové . Pokud se bod nachází mimo křivku, nebude křivka bod obepínat a $\varOmega$ bude nulové (Naresh 2018).
+
+
+
+    \begin{equation*}
+    \varOmega (q, P)=
+    \begin{cases}
+    0, \quad q \notin P\\
+    n > 0, \quad q \in P\\
+    n < 0, \quad q \in P\\
+    \end{cases}
+    \end{equation*}\\
+
+    Algoritmus Winding number má několik výhod, které jej činí užitečným pro řešení problému point location. Jednou z největších výhod je relativně jednoduchá implementace algoritmu, což z něj dělá populární volbu pro řešení jednoduchých problémů. Další výhodou algoritmu Winding number je jeho schopnost pracovat s nekonvexními polygony. To umožňuje algoritmu efektivně pracovat s různými typy polygonů. 
+
+    Mezi nevýhody algoritmu patří jeho neschopnost určit, zda se testovaný bod nachází na hraně polygonu. Další nevýhodou algoritmu může být jeho náchylnost k selhání při přítomnosti polygonů s překrývajícími se hranami nebo s otvory. V těchto případech může být nutné použít jiný algoritmus pro řešení problému. Dalším potenciálním problémem je pomalost algoritmu pro složité nebo velké polygony, kde může být vyhodnocení hodnot \emph{$\varOmega$} časově náročné.
+
+    Vzhledem k jeho výhodám a nevýhodám může být algoritmus Winding number vhodnou volbou pro určení umístění bodu v rovině vzhledem k ohraničujícímu polygonu, zejména pro jednoduché a nekonvexní polygony, kde může být použit k rychlému a spolehlivému řešení.
+
+    Mezi speciální případy lze zařadit stav, kdy se bod nachází na hraně polygonu či přímo odpovídá vrcholu polygonu. V těchto případech algoritmus jako výstup vrací hodnotu -1.
+    \subsubsection{Pseudokód Winding Number}
+    \begin{algorithm}
+    \caption {\textit{Winding Number Algorithm}}
+    \begin{algorithmic}[1]
+        \State Nastav hodnotu $\epsilon$ na $1^{-19}$ (velmi malé číslo).
+        \State Nastav $n$ na počet vrcholů polygonu $P$.
+        \State $\varOmega_s$ = 0.
+        \State Pro každou dvojici vrcholů $P$:
+        \State \indent Získej pozici a úhel $\varOmega$
+        \State \indent {\bf Pokud} je poloha bodu $q$ vlevo od přímky, přičti $\varOmega$ k $\varOmega_s$.
+        \State \indent {\bf Pokud} je poloha bodu $q$ vpravo od přímky, odečti $\varOmega$ od $\varOmega_s$.
+        \State \indent {\bf Pokud} bod $q$ odpovídá vrcholu, vrať -1,
+        \State \indent {\bf Pokud} je bod $q$ na přímce a zároveň je rozdíl úhlu a $\pi$ menší než číslo $\epsilon$, vrať -1 (bod \State \indent$q$ leží na hraně $P$).
+        \State {\bf Pokud} je absolutní hodnota rozdílu $|,|\varOmega_s| - 2\pi,|$ menší než $\epsilon$, vrať 1 (bod $q$ leží uvnitř $P$).
+        \State V opačném případě vrať 0 (bod $q$ leží mimo$P$).
+    \end{algorithmic}
+    \end{algorithm}
+
+    \newpage
+    \section{Vstupní a výstupní data}
+     Vstupem aplikace je soubor obsahující polygony ve formátu shapefile \emph{(.shp)}. Funkčnost aplikace byla testována s polygonovou vrstvou \emph{okresy.shp}, která zobrazuje okrey Čr.\\
+     
+     Aplikace nenabízí výstupní data podobě souboru k uložení. Výsledkem je grafické zobrazení polohy bodu vůči polygonům.
+    \newpage
+    \section{Vytvořená aplikace}
+    Obrázek 2 ukazuje grafické rozhraní vytvořené aplikace pro analýzu polohy bodu vůči polygonům. Hlavní okno zobrazuje nahranou polygonovou vrstvu ve tvaru \emph{.shp}. V horní části se nachází tlačítko pro vybraní \emph{.shp} souboru z uložiště počítače. Dále se zde nachází tlačítko pro provedení analýzy polohy bodu vůči polygonu. Tlačítko označené křížkem odstraní nahraný soubor a jako poslední se tu nachází tlačítko exit pro ukončení aplikace. V záložce \emph{Draw} je možné vybrat, zda se bude vykreslovat polygon či bod. Záložka \emph{Analyze} umožňuje vybrat metodu analýzy polohy bodu. Automaticky je nastavena metoda  \emph{Winding Number}, ale zde je možné metodu změnit na \emph{Roy crossing}.\\
+
+    
+    \begin{figure}[h]
+    \includegraphics[width=15cm, height=10cm]{obr.2.JPG}
+    \centering
+    \caption{Point Location Problem aplikace, zdroj: autoři.}
+    \label{fig:obr2}
+    \end{figure}
+    
+     Při provedení analýzy se zobrazí vyskakovací okno s informací o poloze bodu. Na obrázku 3 je zobrazena situace, kdy se bod nachází uvnitř polygonu. Dotyčný polygon je zvýrazněn fialovou barvou. Obrázek 4 představuje situaci, kdy se bod nachází mimo polygon. Obrázek 5 pak představuje stav, kdy se bod nachází na hraně polygonů (resp. odpovídá vrcholu)
+    \begin{figure}[htbp]
+    \includegraphics[width=15cm, height=10cm]{obr.3.JPG}
+    \centering
+    \caption{Bod v polygonu, zdroj: autoři.}
+    \label{fig:obr3}
+    \end{figure}
+    
+    \begin{figure}[htbp]
+    \includegraphics[width=15cm, height=10cm]{obr.4.JPG}
+    \centering
+    \caption{Bod mimo polygon, zdroj: autoři.}
+    \label{fig:obr4}
+    \end{figure}
+
+    \begin{figure}[htbp]
+    \includegraphics[width=15cm, height=10cm]{obr.5.JPG}
+    \centering
+    \caption{Bod na hraně polygonů, zdroj: autoři.}
+    \label{fig:obr5}
+    \end{figure}
+
+    \newpage
+    \newpage
+    \section{Dokumentace}
+    Aplikace je tvořena třemi skripty. Uživatelské rozgraní je tvořeno skriptem \emph{mainform.py}, jehož základ byl vytvořen pomocí softwaru\emph{QT Creator} . Vizualizaci a vykreslování objektů zajišťuje skript \emph{draw.py}. Skritp \emph{algorithms.py} definuje matematické metody pro správné provedení zvolených analýz.
+
+    \textbf{Metody skriptu \emph{mainform.py} :}
+    
+    \begin{itemize}
+        \item \textbf{setupUi}: inicializuje a nastavuje různé prvky uživatelského rozhraní, jako např. velikost okna, hlavní widget, menu, lištu nástrojů a akce (např. otevření souboru, ukončení aplikace, vykreslení polygonu, analýza pozice bodů a polygonů apod.).
+        
+        \item \textbf{retranslateUi}: nastavení textů pro různé prvky uživatelského rozhraní.
+        
+    \end{itemize}
+
+    \textbf{Metody skriptu \emph{draw.py} :}
+    \begin{itemize}
+        \item \textbf{setPath}: načte cestu ke souboru .shp pomocí dialogového okna, přečte soubor a vytvoří polygon.
+        
+        \item \textbf{mousePressEvent}: spustí se po kliknutí levým tlačítkem myši. Metoda uloží souřadnice bodu, do kterého se kliklo do proměnných x a y, přidá nový bod p do polygonu a překreslí obrazovku.
+
+        \item \textbf{paintEvent}: spustí se při vykreslení okna. Vytvoří grafický objekt, nakreslí polygon a zvýrazní polygon obsahující daný bod.
+
+        \item \textbf{switchsource}: přepíná mezi režimy přidání bodu a přidání vrcholu polygonu.
+        \item \textbf{getPoint}: vrací aktuální pozici bodu jako QPointF.
+        \item \textbf{getPolygon}: vrací standardní polygon jako seznam QPolygonF.
+        \item \textbf{getResPol}: přidá výsledný polygon jako QPolygonF do seznamu.
+        \item \textbf{clearPol}: vymaže všechny standardní polygony.
+        \item \textbf{clearPoint}: vymaže aktuální bod.
+        \item \textbf{clearResPol}: vymaže všechny výsledné polygony.
+
+    \end{itemize}
+
+    \textbf{Metody skriptu \emph{algorithms.py} :}
+    \begin{itemize}
+    \item \textbf{getWindingNumber}:vypočítává počet ovinutí (winding number) bodu \emph{q} vzhledem k polygonu \emph{P}. Nejprve vypočítá pozici bodu \emph{q} vůči každému vrcholu polygonu \emph{P} a poté sčítá úhly, které se vyskytují mezi bodem \emph{q} a každou hranou polygonu \emph{P}. Pokud výsledný úhel sečtený z celého polygonu \emph{P} odpovídá úhlu 2 $\pi$, bod \emph{q} leží uvnitř polygonu \emph{P} a funkce vrátí hodnotu 1. V opačném případě se bod \emph{q} nachází mimo polygon \emph{P} a funkce vrátí hodnotu 0.
+
+    \item \textbf{getPointPolygonPositionR}: určuje polohu bodu \emph{q} vzhledem k polygonu \emph{P}. Metoda prochází všechny vrcholy polygonu \emph{P} a pro každý z nich určuje, na které straně přímky procházející bodem \emph{q} a tímto vrcholem se bod \emph{q} nachází. Pokud leží bod \emph{q} na hraně polygonu \emph{P}, funkce vrátí hodnotu 1. Pokud leží bod \emph{q} uvnitř polygonu \emph{P}, funkce také vrátí hodnotu 1. V opačném případě, když se bod \emph{q} nachází mimo polygon \emph{P}, funkce vrátí hodnotu 0.
+
+    \item \textbf{getRayCrossing}: určuje, kolikrát přímka procházející bodem \emph{q} a bodem s následujícím vrcholem polygonu \emph{P} protíná hrany polygonu. Pokud počet průsečíků je lichý, bod \emph{q} leží uvnitř polygonu \emph{P}, a funkce vrátí hodnotu 1. Pokud počet průsečíků je sudý, bod \emph{q} leží mimo polygon \emph{P}, a funkce vrátí hodnotu 0. Pokud bod \emph{q} leží na hraně polygonu \emph{P}, funkce také vrátí hodnotu 1.
+     
+    \end{itemize}
+
+
+    \newpage
+    \section{Závěr}
+     Úloha si kladla za cíl vytvořit aplikaci pomocí Qt Creator a kriptů v pythonu, která bude analyzovat polohu bodu vůči nahraným polygonům ve tvaru \emph{.shp} pomocí metod \emph{Roy crossing} a \emph{Winding number}. Aplikace byla doplněna o bonusové úkoly, kteeré řeší singulární případy.
+
+     Byla vytvořena přehledná a jednoduchá aplikace pro prevedení námi zvolené analýzy, která dává správné výsledky i co se týče singulárních případů.
+
+     Pro další vylepšení aplikace by bylo možné rozšířit odpověď programu na otázku, kde se bod vůči polygonu nachází (\emph{outside} / \emph{inside}) na další varianty, jako například \emph{on boundary} / \emph{on vertex}  atd.
+    % Zdroje
+    \newpage
+    \section{Zdroje}
+    Přednášky z předmětu \emph{Algoritmy z počítačové kartografie.}\\
+
+    ALCIATORE, D., MIRANDA, R. (1995): A Winding Number and Point-in-Polygon Algorithm. Department of Mechanical Engineering. Colorado State University.\\
+
+    HUANG, C., W., SHIH, T., Y, (1997): On the complexity of point-in-polygon algorithms. Computer \& Geoscienses, 23, 1, 109-118.\\
+
+    NARESH, K., MALLIKARJUN, B. (2018): An Extension to Winding Number and Point-in-Polygon Algorithm. IFAC-PapersOnLine. 51, 1.
+
+    
+\end{document}
+
