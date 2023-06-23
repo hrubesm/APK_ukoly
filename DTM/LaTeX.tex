@@ -1,0 +1,339 @@
+\documentclass[a4paper,12pt]{article}
+\usepackage{graphicx}
+\usepackage{geometry}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage[parfill]{parskip}
+\usepackage[czech]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage{fancyhdr}
+\usepackage{enumitem}
+\usepackage{gensymb}
+\usepackage{amsmath, amssymb, amsfonts}
+\usepackage{graphicx, caption}
+\graphicspath{ {./images/} }
+\geometry{
+total={170mm,257mm},
+ left=20mm,
+ top=20mm
+ }
+ 
+\title{Technická zpráva úkol č. 3: Digitální model terénu} 
+\author{Miroslav Hrubeš, Lucie Peterková} 
+\date{Praha 2023} 
+\usepackage{graphicx} % Required for inserting images
+
+\frenchspacing
+\begin{document}
+    \maketitle
+    \newpage
+    % Zadání
+    \section{Zadání}
+    \textbf{Uloha č. 3: Digirální model terénu}\\
+    \textit{Vstup: množina $P = \{p_1, \dots, p_n\}, p_i = \{x_i, y_i, z_i\}$}\\
+    \textit{Výstup: polyedrický DMT nad množinou P představovaný vrstevnicemi doplněný vizualizací sklonu trojúhelníku a jejich expozicí.}
+
+    Metodou inkrementální konstrukce vytvořte nad množinou $P$ vstupních bodů 2D Delaunay triangulaci. Jako vstupní data použijte existující geodetická data (alespoň 300 bodů) popř. navrhněte algoritmus pro generování syntetických vstupních dat představujících významné terénní tvary (kupa, údolí, spočinek, hřbet, ...).
+
+    Vstupní množiny bodů včetně níže uvedených výstupů vhodně vizualizujte. Grafické rozhraní realizujte s využitím frameworku QT. Dynamické datové struktury implementujte s využitím STL.
+    
+    Nad takto vzniklou triangulací vygenerujte polyedrický digitální model terénu. Dále proveďte tyto analýzy:
+    \begin{itemize}
+    \item S využitím lineární interpolace vygenerujte vrstevnice se zadaným krokem a v zadaném intervalu, provedte jejich vizualizaci s rozlišením zvýrazněných vrstevnic.
+    \item Analyzujte sklon digitálního modelu terénu, jednotlivé trojúhelníky vizualizujte v závislosti na jejich sklonu.
+    \item Analyzujte expozici digitálního modelu terénu, jednotlivé trojúhelníky vizualizujte v závislosti na jejich expozici ke světové straně.
+    \end{itemize}
+    
+    Zhodnoťte výsledný digitální model terénu z kartografického hlediska, zamyslete se nad slabými místy algoritmu založeného na 2D Delaunay triangulaci. Ve kterých situacích (různé terénní tvary) nebude dávat vhodné výsledky? Tyto situace graficky znázorněte.
+    
+    Zhodnocení činnosti algoritmu včetně ukázek proveďte alespoň na 3 strany formátu A4.
+
+    \section{Bonusové úlohy}
+    Nebyly řešeny žádné bonusové úlohy.
+
+    \newpage
+    \section{Popis a rozbor problému}
+    \subsection{DMT}
+    Matematické zobrazení povrchu země, včetně terénních rysů jako jsou kopce, údolí a jiné topografické prvky, se označuje zkratkou DMT (digitální model terénu). Data pro DMT se získávají pomocí LiDARu nebo fotogrammetrie, kdy je možné získat velké množství výškových bodů, tedy že pro libovolný bod modelu je možné získat jeho nadmořskou výšku.
+
+    Jednou z metod pro vytváření digitálních terénních modelů je TIN (Triangular Irregular Network). TIN model vytváří plochy terénu pomocí trojúhelníků, které se vytvoří spojením nespojitých bodů. Tyto polyedrické modely terénu zachycují nejen výškovou informaci, ale také údaje o sklonu terénu.
+    
+    Obecně se polyedrické modely nejčastěji využívány pro přibližný výpočet průběhu vrstevnic, konstrukci profilů či řezů a další analýzy a to z toho důvodu, že výpočty nad polyedrickým digitálním modelem terénu jsou v porovnání s jinými modely poměrně jednoduché. Oproti jiným modelům, které využívají pravidelné sítě nebo vrstevnice, TIN vypočítává výšku pro každý bod pomocí interpolace výšek okolních bodů, což umožňuje přesnější odhad výšky.
+
+    \subsection{Delaunayho triangulace}
+    Metoda Delaunayho triangulace ($DT$) je široce používanou metodou triangulace v GIS. Tato metoda maximalizuje minimální vnitřní úhel vytvořených trojúhelníků, což je kritérium globální optimalizace geometrických parametrů všech trojúhelníků v síti. Princip této metody spočívá v tom, že v kružnici opsané libovolnému trojúhelníku z $DT$ neleží žádný další bod ze vstupní množiny. 
+    
+    Metoda, využívající inkrementální vkládání, je založena na postupném přidávání bodů do již vytvořeného $DT$. Nejprve je nutné vybrat libovolný bod z množiny a najít jeho nejbližší bod (v euklidovském prostoru). Tento krok dává vzniknout orientované hraně $e = (P_1, P_2)$. Následně se hledá bod P, který musí ležet v levé polorovině od hrany e a zároveň musí minimalizovat poloměr r kružnice k, která je opsaná tomuto bodu a této hraně. Tuto podmínku lze zapsat vzorcem:
+    \begin{align*}
+        P = \operatorname{arg,min}_{r'(k_i)} \forall P_i \in \sigma_L(e), k_i = (e, P_i), P_i(e) \in \sigma_L
+    \end{align*}
+    
+
+    Po nalezení nejvhodnějšího bodu vzniknou nové hrany $e_1 = (P_2, P), e_2 = (P, P_1)$. Pokud bod P nebyl nalezen, otočíme orientaci hrany a vyhledání bodu se opakuje, opět v levé polorovině hrany e. Tím je dokončena základní inicializace algoritmu, která se poté opakuje.
+
+    Po nalezení vhodného Delaunayho bodu jsou dvě nové hrany společně s první definovanou hranou e vloženy do seznamu aktivních hran ($AEL$). Následně se vezme první hrana, otočí se její orientace a nalezne se pro ni bod P. Dvě nově vzniklé hrany poté přidáme do $AEL$ za předpokladu, že se nově vytvořené hrany v $AEL$ již nenachází, byť s opačnou orientací. V tomto případě je hrana z $AEL$ odstraněna a přidána do výsledné triangulace. Pokud pro aktuální hranu nebyl nalezen žádný bod, znamená to, že se jedná o součást konvexního obalu, tudíž se taky přidá do výsledné triangulace. Když nedojde k nalezení bodu P, hledá se v pravé polorovině.
+
+    Daný algoritmus je popsán pseudokódem na následujících řádcích.
+
+    \begin{algorithm}[H]
+    \caption{Delaunayho triangulace}
+        \begin{algorithmic}[1]
+        \State Inicializuj $DT$ a $AEL$ jako prázdné seznamy
+        \State Najdi bod $P_1$ s nejmenší souřadnicí $x$
+        \State Najdi bod $P_2$, který bude Euklidovskou vzdáleností k $P_1$ nejbližší
+        \State Z nalezených bodů $P_1$ a $P_2$ vytvoř hranu $e$
+        \State {\bf Dokud}{$AEL$ není prázdné:}
+        \State \indent Vezmi první hranu $e_1$ z $AEL$ a otoč její orientaci
+        \State \indent Najdi Delaunayův bod $P$
+        \State \indent {\bf Jestli} {$P$ existuje:}
+        \State \indent \indent Vytvoř zbývající strany trojúhelníku $e_2 = (P_2,P)$ a $e_3 = (P,P_1)$
+        \State \indent \indent Přidej vzniklé hrany do $DT$
+        \State \indent \indent Aktualizuj $AEL$
+        \end{algorithmic}
+    \end{algorithm}
+
+    \subsection{Konstrukce vrstevnic}
+    Problémem této úlohy je nalézt průsečnice roviny určené trojúhelníkem, který je součástí Delaunayovy triangulace ($DT$) a leží vodorovné rovině $\rho$ o výšce $h$. Tento proces se opakuje pro všechny trojúhelníky v $DT$. Výpočet souřadnic bodů průsečnic $AB$ se provádí pouze v případě, že průsečnice je úsečkou. Vzorec pro výpočet souřadnic má tento tvar:
+    \begin{align*}
+    x_{a} &= \frac{x_{3} - x_{1}}{z_{3} - z_{1}}(z - z_{1}) + x_{1} \\
+    x_{b} &= \frac{x_{2} - x_{1}}{z_{2} - z_{1}}(z - z_{1}) + x_{1} \\
+    y_{a} &= \frac{y_{3} - y_{1}}{z_{3} - z_{1}}(z - z_{1}) + y_{1} \\
+    y_{b} &= \frac{y_{2} - y_{1}}{z_{2} - z_{1}}(z - z_{1}) + y_{1}
+    \end{align*}
+
+    Kontrolu, zda rovina  $\rho$ prochází hranou $(p_i, p_{i+1})$, lze provést pomocí rovnice
+    \begin{align*}
+        (z - z_i)(z - z_{i+1}) < 0
+    \end{align*}
+
+    Daný algoritmus je popsán pseudokódem na následujících řádcích.
+    
+    \begin{algorithm}[H]
+    \caption {Konstrukce vrstevnic}
+    \begin{algorithmic}[1]
+        \State Vytvoř prázdný seznam hran $cl$
+        \State Pro každou po sobě jdoucí trojici hran $e_{1} = (p_{1} p_{2})$, $e_{2} = (p_{2} p_{3})$, $e_{3} = (p_{3} p_{1})$ Delaunayho triangulace:
+        \State \indent $p_{i} = [x_{i}, y_{i}, z_{i}]$
+        \State \indent Pro každou hodnotu $z$ z intervalu ($z_{min}$, $z_{max}$) s krokem $dz$:
+        \State \indent\indent $dz_{i} = z_{i} - z$
+        \State \indent\indent $t_{ij} = dz_{i}dz_{j}$
+        \State \indent\indent \textbf{Jestli} $dz_{i}=dz_{i+1}=dz_{i+2}=0$:
+        \State \indent\indent\indent Jdi na 4)
+        \State \indent\indent \textbf{Jinak Jestli} $dz_{i}=dz_{i+1}=0$:
+        \State \indent\indent\indent Přidej hranu $e_{1}$ do $cl$
+        \State \indent\indent \textbf{Jinak Jestli} $dz_{i+1}=dz_{i+2}=0$:
+        \State \indent\indent\indent Přidej hranu $e_{2}$ do $cl$
+        \State \indent\indent \textbf{Jinak Jestli} $dz_{i+2}=dz_{i}=0$:
+        \State \indent\indent\indent Přidej hranu $e_{3}$ do $cl$
+        \State \indent\indent \textbf{Jinak Jestli} $t_{12}\leq$ a $t_{23}<0$ \textbf{nebo} $t_{12}<0$ a $t_{23}\leq0$:
+        \State \indent\indent\indent $A$=bod ležící na hraně $e_{1}$ ve výšce $z$
+        \State \indent\indent\indent $B$=bod ležící na hraně $e_{2}$ ve výšce $z$
+        \State \indent\indent\indent $e = (A,B)$
+        \State \indent\indent\indent přidání hrany $e$ do $cl$
+        \State \indent\indent \textbf{Jinak Jestli} $t_{23}\leq$ a $t_{31}<0$ \textbf{nebo} $t_{23}<0$ a $t_{31}\leq0$:
+        \State \indent\indent\indent $B$=bod ležící na hraně $e_{2}$ ve výšce $z$
+        \State \indent\indent\indent $C$=bod ležící na hraně $e_{3}$ ve výšce $z$
+        \State \indent\indent\indent $e = (B,A)$
+        \State \indent\indent\indent přidání hrany $e$ do $cl$
+        \State \indent\indent \textbf{Jinak Jestli} $t_{12}\leq$ a $t_{31}<0$ \textbf{nebo} $t_{12}<0$ a $t_{31}\leq0$:
+        \State \indent\indent\indent $C$=bod ležící na hraně $e_{3}$ ve výšce $z$
+        \State \indent\indent\indent $A$=bod ležící na hraně $e_{1}$ ve výšce $z$
+        \State \indent\indent\indent $e = (C,A)$
+        \State \indent\indent\indent přidej hranu $e$ do $cl$
+    \end{algorithmic}
+    \end{algorithm}
+
+    \subsection{Analýza sklonu}
+    Digitální model terénu umožňuje provádět různé analytické úlohy, například analýzu sklonu terénu. Výpočet sklonu se aplikuje na každý trojúhelník v digitálním modelu terénu.
+
+    Rovnice roviny $\rho$, pro kterou se sklon počítá, je
+
+    $$\rho = ax + by + cz + d = 0$$,
+    
+    pro níž je počítán gradient ($\nabla\rho$) pomocí vzorce
+    
+    $$\nabla\rho (x_0, y_0, z_0) = (\frac{\sigma_\rho}{\sigma_x}(x_0), \frac{\sigma_\rho}{\sigma_y}(y_0), (\frac{\sigma_\rho}{\sigma_z}(z_0)) = (a, b, c).$$
+    
+    Rovinu $\rho$ lze definovat touto maticí
+    
+    \[
+      \begin{vmatrix}
+        $$x-x_1$$ & $$y-x_1$$ & $$z-x_1$$\\
+        $$x_2-x_1$$ & $$y_2-x_1$$ & $$z_2-x_1$$\\
+        $$x_3-x_1$$ & $$y_3-x_1$$ & $$z_3-x_1$$ 
+      \end{vmatrix}
+    =
+    0,
+    \]
+    
+    z které se následně výpočítá odchylka $\varphi$ od roviny $\pi$ vzorcem
+    
+    $$\varphi = arccos \bigg| \frac{n_1 n_2}{||n_1|| ||n_2||} \bigg|$$.
+
+    Daný algoritmus je popsán pseudokódem na následujících řádcích.
+    
+    \begin{algorithm}
+    \caption{Sklon trojúhelníku}
+    \begin{algorithmic}[1]
+    \State $n_x, n_y, n_z \gets$ {$P_1, P_2, P_3$}
+    \State $n \gets \sqrt{nx^2 + ny^2 + nz^2}$
+    \State $\rho = {\frac{nz}{n}}$
+
+    \end{algorithmic}
+    \end{algorithm}
+
+    \subsection{Analýza orientace terénu}
+    Dále je možné analyzovat orientaci terénu. Je definována jako azimut průmětu gradientu $\nabla \rho$ roviny trojúhelníku do roviny $x$, $y$. Pro vektor gradientu $v$ platí, že
+    \begin{align*}
+        \begin{gathered}
+            v = \frac{\partial p}{\partial x}(x_0), \frac{\partial p}{\partial y}(y_0) = (a, b, 0)
+        \end{gathered}
+    \end{align*}
+    
+    \noindent Azimut vektoru $v$ je možné spočítat dle vzorce
+    \begin{align*}
+        A = arctan\left(\frac{b}{a}\right)
+    \end{align*}
+
+    \begin{algorithm}[H]
+    \caption {Orientace svahu}
+    \begin{algorithmic}[1]
+        \State $n_x, n_y, n_z \gets$ {$P_1, P_2, P_3$}
+        \State aspect = arctan $\frac{n_y}{n_x}$
+        \State \textbf{Pokud} aspect $< 0$
+        \State \indent aspect = aspect + $2\pi$
+    \end{algorithmic}
+    \end{algorithm}
+
+    \section{Vstupní a výstupní data}
+    Vstupní data jsou v podobě množiny bodů uložené v textovém souboru, kde jsou souřadnice x, y a z oddělené tabulátorem. Jako cvičná data bylo použito bodové mračno z online kurzu od {\textit{Trimble: Working With LiDAR (point cloud) Files} (viz zdroje). Dataset byl zmenšen na 552 bodů a některé hodnoty z byly cíleně pozměněny pro názornější funkčnost aplikace.
+
+    Výstupem je polyedrický DMT vytvořený nad vstupní bodovou množinou doplněn o vrstevnice a o vizualizace sklone a expozice terénu.
+
+    \section{Aplikace}
+    Pomocí skriptu {\textit{mainform.py} se spustí aplikace. Na widgetu (obr. 1) se nachází panel nástrojů, kde je možné pomocí ikon v tomto pořadí provést následující akce: {\textit{Open file}: otevření vstupního bodového souboru, {\textit{Generate Delaunay triangulation}: vygenerování Delaunayho triangulace (je nutné provést tento krok před spuštěním dalších analýz), {\textit{Create contour lines}: vygenerování vrstevnic, {\textit{Analyze slope of DTM}: analýza sklonu, {\textit{Analyze aspect of DTM}: analýza orientace svahu, {\textit{Set contour lines parameters}: nastavení parametrů vrstevnic, {\textit{Clear results}: odstranění provedených analýz, {\textit{Clear all}: odstranění provedených analýz a datového souboru z aplikace,{\textit{Exit apllication}: ukončení aplikace.
+
+    \begin{figure}[htbp]
+    \includegraphics[width=12cm, height=10cm]{obr1_ukazka.JPG}
+    \centering
+    \caption{Ukázka aplikace se vstupní množinou bodů, zdroj: autoři.}
+    \label{fig:obr1}
+    \end{figure}
+
+    \section{Dokumentace}
+    Aplikace je tvořena šesti skripty. Uživatelské rozhraní je tvořeno skriptem {\textit{mainform.py}}, jehož základ byl vytvořen pomocí softwaru QT Creator. Vizualizaci a vykreslování objektů zajišťuje skript {\textit{draw.py}}. Skript {\textit{algorithms.py}} definuje matematické metody pro správné provedení zvolených analýz. Skript {\textit{QPoint3DF}} definuje třídu QPoint3DF, která reprezentuje bod v 3D prostoru pomocí tří souřadnic (x, y, z). Skript {\textit{edge.py}} definuje třídu Edge pro reprezentaci hrany mezi dvěma body v trojrozměrném prostoru pomocí třídy QPoint3DF a implementuje několik metod pro práci s touto třídou, jako jsou získání počátečního a koncového bodu, vytvoření nové hrany s opačnou orientací a porovnání dvou hran.Skript {\textit{triangle.py}} definuje třídu Triangle, která reprezentuje trojúhelník v digitálním modelu terénu (DMT) a obsahuje metody pro získání jednotlivých vrcholů, sklonu a expozice trojúhelníku.
+
+    \textbf{Metody skriptu \emph{mainform.py} :}
+    \begin{itemize}
+        \item \textbf{setupUi}: inicializuje a nastavuje různé prvky uživatelského rozhraní, jako např. velikost okna, hlavní widget, menu, lištu nástrojů a akce (např. otevření souboru, ukončení aplikace, vykreslení polygonu, analýza pozice bodů a polygonů apod.).
+        
+        \item \textbf{retranslateUi}: nastavení textů pro různé prvky uživatelského rozhraní.
+
+        
+    \end{itemize}
+
+    \textbf{Metody skriptu \emph{draw.py} :}
+    \begin{itemize}
+    \item \textbf{loadData:} Načítá data ze vstupního souboru a vrací seznam bodů s jejich souřadnicemi po přepočtu na zadanou šířku a výšku okna aplikace.
+
+    \item \textbf{getAspectColor:} Vrací barvu na základě směru svahu (aspectu).
+    
+    \item \textbf{paintEvent:} Vykresluje body, trojúhelníky a barvy na základě sklonu nebo směru svahu (aspectu) pomocí objektu třídy QPainter.
+    \end{itemize}
+
+    \textbf{Metody skriptu \emph{algorithms.py} :}
+    \begin{itemize}
+    \item \textbf{get2LinesAngle}: Vypočítá úhel mezi dvěma přímkami zadanými 4 body.
+    \item \textbf{getPointLinePosition}: Určí, zda bod leží nalevo nebo napravo od úsečky definované dvěma body.
+    \item \textbf{getDelaunayPoint}: Najde optimální Delaunayho bod (tj. bod uvnitř kružnice opsané nad trojúhelníkem).
+    \item \textbf{getNearestPoint}: Najde nejbližší bod z množiny bodů k danému bodu p.
+    \item \textbf{updateAEL}: Aktualizuje seznam hran AEL (Active Edge List).
+    \item \textbf{createDT}: Vytvoří Delaunayho triangulaci dané množiny bodů.
+    \item \textbf{getContourLinePoint}: Spočítá průsečík úsečky s horizontální rovinou o zadané výšce z.
+    \item \textbf{createContourLines}: Vytvoří konturové linie v zadaném intervalu a kroku. Prochází všechny trojúhelníky a testuje průsečíky rovin s rovinou zadanou z-intervalem. Pokud se z-interval dotýká hrany trojúhelníku, vypočítá se průsečík této hrany s rovinou. Pokud je z průsečíku dělitelný pěti beze zbytku, jedná se o výraznou konturovou linii.
+    \item \textbf{getNormVector}: Vypočítá normálový vektor trojúhelníka.
+    \item \textbf{getSlope}: Vypočítá sklon trojúhelníku.
+    \item \textbf{getAspect}: Vypočítá orientaci trojúhelníku.
+    \item \textbf{analyzeDTMSlope}: Prochází všechny trojúhelníky v seznamu a vypočítává sklon. Vytváří nový seznam trojúhelníků, které obsahují informace o sklonu.
+    \item \textbf{analyzeDTMAspect}: Prochází všechny trojúhelníky v seznamu a vypočítává orientaci. Vytváří nový seznam trojúhelníků, které obsahují informace o orientaci.
+    \end{itemize}
+
+    \textbf{Metody skriptu \emph{edge.py} :}
+    \begin{itemize}
+    \item \textbf{getStart}: metoda, která vrací počáteční bod hrany.
+    \item \textbf{getEnd}: metoda, která vrací koncový bod hrany.
+    \item \textbf{switchOrientation}: metoda, která vytvoří novou hranu s opačnou orientací, tedy vymění počáteční a koncový bod.
+    \item \textbf{eq}: metoda, která porovnává dvě hrany a vrací True, pokud jsou stejné (mají stejný počáteční a koncový bod), jinak vrací False
+    \end{itemize}
+
+    \textbf{Metody skriptu \emph{QPoint3DF.py} :}
+    \begin{itemize}
+    \item \textbf{getZ}: Metoda, která vrací hodnotu souřadnice z objektu QPoint3DF.
+    \end{itemize}
+
+    \textbf{Metody skriptu \emph{triangle.py} :}
+    \begin{itemize}
+    \item \textbf{getP1}: Vrátí první vrchol trojúhelníku.
+    \item \textbf{getP2}: Vrátí druhý vrchol trojúhelníku.
+    \item \textbf{getP3}: Vrátí třetí vrchol trojúhelníku.
+    \item \textbf{getSlope}: Vrátí sklon trojúhelníku.
+    \item \textbf{getAspect}: Vrátí orientaci trojúhelníku.
+    \end{itemize}
+
+    \section{Výsledky}
+    Prvním nezbytným krokem bylo ze vstupní množiny bodů vytvořit Delaunayho triangulaci , neboť se od tohoto procesu odvíjí další postup. Vykreslení triangulace (Obr.~2) lze na první pohled subjektivně hodnotit jako zdařilé. Dalším krokem bylo pro vykreslení vrstevnic (Obr.~3). Před samotným vykreslením byly do aplikace zadány tři nezbytné parametry - minimální a maximální hodnota intervalu nadmořské výšky bodů, která je zde 0 m, resp. 400 m, a velikost rozestupu mezi vrstevnicemi, jež je zde nastavena na 20 m.
+
+    Z vykreslených vrstevnic lze usuzovat, že vstupní bodová množina je velice rozmanitá. Lepší představu o členitosti terénu můžeme získat pomocí analýzy sklonu (Obr.~4), resp. jeho velikosti, a analýzou orientace sklonu (Obr.~5). Z analýzy velikosti sklonu lze odvodit, že se střed severní a jihozápadní části obsahuje především skloněnější terén, zatímco skoro celá východní část obsahuje především terén rovinatější.Orientace sklonu bývá často velice náročná na grafické vyjádření. V tomto případě byl azimut rozdělen dle světových stran do osmi intervalů a těm byly přiřazeny náhodné barvy (Obr.~6)
+
+    \begin{figure}[htbp]
+    \includegraphics[width=15cm, height=10cm]{obr2_DT.JPG}
+    \centering
+    \caption{Delaunayho triangulace nad vstupní množinou bodů, zdroj: autoři.}
+    \label{fig:obr2}
+    \end{figure}
+    \clearpage
+    \begin{figure}[htbp]
+    \includegraphics[width=15cm, height=10cm]{obr3_vrstevnice.JPG}
+    \centering
+    \caption{Vykreslení vrstevnic, zdroj: autoři.}
+    \label{fig:obr3}
+    
+    \text{ }
+    
+    \includegraphics[width=15cm, height=10cm]{obr4_sklon_analyza.JPG}
+    \centering
+    \caption{Analýza sklonu svahů, zdroj: autoři.}
+    \label{fig:obr4}
+    \end{figure}
+    
+    \clearpage
+    \begin{figure}[htbp]    
+    \includegraphics[width=15cm, height=10cm]{obr5_sklon_ori.JPG}
+    \centering
+    \caption{Analýza orientace svahů, zdroj: autoři.}
+    \label{fig:obr5}
+    \includegraphics[width=12cm, height=6cm]{obr6_ori_barvy.JPG}
+    \centering
+    \caption{Intervaly azimutů a jejich RGB kódy, zdroj: autoři.}
+    \label{fig:obr6}
+    \end{figure} 
+
+    \section{Závěr}
+    Cílem této práce bylo vygenerovat digitální model terénu na základě vstupní množiny bodů spolu s funkcemi, které by za pomocí lineární metody vytvořily vrstevnice a umožnily analyzovat sklon a orientaci trojúhelníků v modelu. Lze konstatovat, že cíl práce byl splněn, neboť zde vytvořený a popsaný program výše uvedené v rámci možností úspěšně a bez závad splňuje.
+    
+    Program by neměl obsahovat žádné stěžejní nedostatky. Obecně však lze říci, že v případě využívání analýzy polydrických modelů nastává problém špatné orientace vrcholů hřebenů či údolí. Možnosti dalšího vylepšení programu lze spatřit v doplnění zbývajících bonusových úloh. Samostatným případem k diskuzi jsou pak alternativní možnosti grafického vyjádření orientace sklonu.
+
+
+
+
+
+
+
+    \newpage
+    \section{Zdroje}
+    Přednášky z předmětu \emph{Algoritmy z počítačové kartografie.}\\
+
+    TRIMBLE (2019). Tutorial: Working With LiDAR Point Cloud Files. eCognition Support Center. Dostupné z:https://support.ecognition.com/hc/en-us/articles/360018797220-Tutorial-Working-With-LiDAR-point-cloud-Files
+
+    
+\end{document}

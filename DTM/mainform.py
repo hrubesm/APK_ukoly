@@ -1,6 +1,7 @@
 from PyQt6 import QtCore, QtGui, QtWidgets
 from draw import Draw
 from algorithms import Algorithms
+from settings import SettingDialog
 
 
 class Ui_MainForm(object):
@@ -120,8 +121,9 @@ class Ui_MainForm(object):
         self.actionClear_all.triggered.connect(self.clearAll)
         self.actionClear_results.triggered.connect(self.clearResults)
         self.actionExit.triggered.connect(sys.exit)
-        self.actionContoursParameters.triggered.connect(self.setContourParameter)
-        self.actionContoursParameters.triggered.connect(self.show_contour_parameters)
+        #self.actionContoursParameters.triggered.connect(self.setContourParameter)
+        self.actionContoursParameters.triggered.connect(self.settings)
+        #self.actionContoursParameters.triggered.connect(self.show_contour_parameters)
 
 
         self.retranslateUi(MainForm)
@@ -153,6 +155,10 @@ class Ui_MainForm(object):
         self.actionClear_all.setText(_translate("MainForm", "Clear all"))
 
 
+    def __init__(self):
+        self.__min = 0
+        self.__max = 400
+        self.__step = 10
     def openFile(self):
         ###Load points from input file###
         width = self.Canvas.frameSize().width()
@@ -197,13 +203,17 @@ class Ui_MainForm(object):
         self.Canvas.setTriangles(dtm)
         self.Canvas.repaint()
 
-    #Default contours parameters
-    def __init__(self):
-        self.__contours_min = 0
-        self.__contours_max = 400
-        self.__contours_step = 10
-
-
+    # Settings
+    def settings(self):
+        dialog = SettingDialog(self.__min, self.__max, self.__step)
+        # Get input values for signal accept
+        if dialog.exec():
+            min, max, step = dialog.getInputs()
+            self.__min = int(min)
+            self.__max = int(max)
+            self.__step = int(step)
+        else:
+            return
 
     def runContourLines(self):
         ###Create contour lines###
@@ -214,55 +224,11 @@ class Ui_MainForm(object):
         a = Algorithms()
 
         #Parameters
-        contours, emph_contours = a.createContourLines(dt, self.__contours_min, self.__contours_max, self.__contours_step)
+        contours, emph_contours = a.createContourLines(dt, self.__min, self.__max, self.__step)
 
         self.Canvas.setContours(contours, emph_contours)
         self.Canvas.repaint()
 
-    def setContourParameter(self, parameter):
-        ###Setting Countours parameters###
-        if parameter == "min":
-            cmin, ok = QtWidgets.QInputDialog.getInt(self.Canvas, "Contour lines minimum", "Set contour lines minimum", value=self.__contours_min)
-            if ok:
-                self.__contours_min = cmin
-        elif parameter == "max":
-            cmax, ok = QtWidgets.QInputDialog.getInt(self.Canvas, "Contour lines maximum", "Set contour lines maximum", value=self.__contours_max)
-            if ok:
-                self.__contours_max = cmax
-        elif parameter == "step":
-            step, ok = QtWidgets.QInputDialog.getInt(self.Canvas, "Contour lines step", "Set contour lines step", value=self.__contours_step)
-            if ok:
-                self.__contours_step = step
-
-    def show_contour_parameters(self):
-        ###Dialog box with parameters###
-        contour_dialog = QtWidgets.QDialog()
-        contour_dialog.setWindowTitle("Contour parameters")
-        contour_dialog.setModal(True)
-
-        #Buttons
-        min_button = QtWidgets.QPushButton(f"Set minimum", contour_dialog)
-        min_button.move(50, 50)
-        min_button.clicked.connect(lambda: self.setContourParameter("min"))
-
-        max_button = QtWidgets.QPushButton(f"Set maximum", contour_dialog)
-        max_button.move(50, 100)
-        max_button.clicked.connect(lambda: self.setContourParameter("max"))
-
-        step_button = QtWidgets.QPushButton(f"Set step", contour_dialog)
-        step_button.move(50, 150)
-        step_button.clicked.connect(lambda: self.setContourParameter("step"))
-
-        ok_button = QtWidgets.QPushButton("OK", contour_dialog)
-        ok_button.move(50, 200)
-        ok_button.clicked.connect(lambda: [self.runContourLines(), contour_dialog.accept()])
-
-        cancel_button = QtWidgets.QPushButton("Cancel", contour_dialog)
-        cancel_button.move(150, 200)
-        cancel_button.clicked.connect(contour_dialog.reject)
-
-        #Showing dialog box
-        contour_dialog.exec()
 
     def clearAll(self):
         ###Clear points and all results###
