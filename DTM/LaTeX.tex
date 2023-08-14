@@ -283,7 +283,7 @@ total={170mm,257mm},
     \section{Výsledky}
     Prvním nezbytným krokem bylo ze vstupní množiny bodů vytvořit Delaunayho triangulaci , neboť se od tohoto procesu odvíjí další postup. Vykreslení triangulace (Obr.~2) lze na první pohled subjektivně hodnotit jako zdařilé. Dalším krokem bylo pro vykreslení vrstevnic (Obr.~3). Před samotným vykreslením byly do aplikace zadány tři nezbytné parametry - minimální a maximální hodnota intervalu nadmořské výšky bodů, která je zde 0 m, resp. 400 m, a velikost rozestupu mezi vrstevnicemi, jež je zde nastavena na 20 m.
 
-    Z vykreslených vrstevnic lze usuzovat, že vstupní bodová množina je velice rozmanitá. Lepší představu o členitosti terénu můžeme získat pomocí analýzy sklonu (Obr.~4), resp. jeho velikosti, a analýzou orientace sklonu (Obr.~5). Z analýzy velikosti sklonu lze odvodit, že se střed severní a jihozápadní části obsahuje především skloněnější terén, zatímco skoro celá východní část obsahuje především terén rovinatější.Orientace sklonu bývá často velice náročná na grafické vyjádření. V tomto případě byl azimut rozdělen dle světových stran do osmi intervalů a těm byly přiřazeny náhodné barvy (Obr.~6)
+    Z vykreslených vrstevnic lze usuzovat, že vstupní bodová množina je velice rozmanitá. Lepší představu o členitosti terénu můžeme získat pomocí analýzy sklonu (Obr.~4), resp. jeho velikosti, a analýzou orientace sklonu (Obr.~5). Z analýzy velikosti sklonu lze odvodit, že se střed severní a jihozápadní části obsahuje především skloněnější terén, zatímco skoro celá východní část obsahuje především terén rovinatější.Orientace sklonu bývá často velice náročná na grafické vyjádření. V tomto případě byl azimut rozdělen dle světových stran do osmi intervalů a těm byly přiřazeny náhodné barvy (Obr.~6).
 
     \begin{figure}[htbp]
     \includegraphics[width=15cm, height=10cm]{obr2_DT.JPG}
@@ -318,10 +318,24 @@ total={170mm,257mm},
     \label{fig:obr6}
     \end{figure} 
 
+    Problematickým místem správného provedení analýz může být špatná orientace vrcholů hřebenů nebo údolí. V ukázkových datech je patrná přítomnost hřebene, kde dochází ke snižování nadmořské výšky ve 2 navzájem protilehlých směrech (Obr.~7). Při provedení analýzy orientace (Obr.~8) je patrné, že v průběhu svahu je orientace zachována a že u svahu na druhé straně hřebenu je správně zobrazena opačná orientace svahu.
+
+    \begin{figure}[htbp]    
+    \includegraphics[width=6cm, height=5cm]{obr7_hreben_ukazak.JPG}
+    \centering
+    \caption{Hřeben, interval vrstevnic: 50 m, zdroj: autoři.}
+    \label{fig:obr7}
+    \includegraphics[width=6cm, height=5cm]{obr8_hreben_orientace.JPG}
+    \centering
+    \caption{Orientace svahů hřebenu, zdroj: autoři.}
+    \label{fig:obr8}
+    \end{figure} 
+
+    \newpage
     \section{Závěr}
     Cílem této práce bylo vygenerovat digitální model terénu na základě vstupní množiny bodů spolu s funkcemi, které by za pomocí lineární metody vytvořily vrstevnice a umožnily analyzovat sklon a orientaci trojúhelníků v modelu. Lze konstatovat, že cíl práce byl splněn, neboť zde vytvořený a popsaný program výše uvedené v rámci možností úspěšně a bez závad splňuje.
     
-    Program by neměl obsahovat žádné stěžejní nedostatky. Obecně však lze říci, že v případě využívání analýzy polydrických modelů nastává problém špatné orientace vrcholů hřebenů či údolí. Možnosti dalšího vylepšení programu lze spatřit v doplnění zbývajících bonusových úloh. Samostatným případem k diskuzi jsou pak alternativní možnosti grafického vyjádření orientace sklonu.
+    Program by neměl obsahovat žádné stěžejní nedostatky. Obecně však lze říci, že v případě využívání analýzy polydrických modelů nastává problém špatné orientace vrcholů hřebenů či údolí, což se ale v našich ukázkových datech nepotvrdilo. Možnosti dalšího vylepšení programu lze spatřit v doplnění zbývajících bonusových úloh. Samostatným případem k diskuzi jsou pak alternativní možnosti grafického vyjádření orientace sklonu.
 
 
 
@@ -337,3 +351,4 @@ total={170mm,257mm},
 
     
 \end{document}
+
